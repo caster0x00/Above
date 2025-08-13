@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="above",
     version="2.8",
-    url="https://github.com/casterbyte/above",
+    url="https://github.com/caster0x00/above",
     author="Magama Bazarov",
     author_email="magamabazarov@mailbox.org",
     description="Invisible Network Protocol Sniffer",

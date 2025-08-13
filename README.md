@@ -124,7 +124,7 @@ Or:
 
 ```bash
 :~$ sudo apt-get install python3-scapy python3-colorama python3-setuptools
-:~$ git clone https://github.com/casterbyte/above
+:~$ git clone https://github.com/caster0x00/above
 :~$ cd above/
 :~/above$ sudo python3 setup.py install
 ```
@@ -137,7 +137,7 @@ brew install python3
 sudo pip3 install scapy colorama setuptools
 
 # Clone the repo
-git clone https://github.com/casterbyte/above
+git clone https://github.com/caster0x00/above
 cd above/
 sudo python3 setup.py install
 ```
