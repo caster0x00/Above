@@ -8,7 +8,7 @@ Network security sniffer for finding vulnerabilities in the network. Designed fo
 Above: Invisible network protocol sniffer
 Designed for pentesters and security engineers
 
-Author: Mahama Bazarov, <mahamabazarov@mailbox.org>
+Author: Magama Bazarov, <magamabazarov@mailbox.org>
 Pseudonym: Caster
 Version: 2.8
 Codename: Rubens Barrichello
@@ -174,7 +174,7 @@ caster@kali:~$ sudo above --interface eth0 --timer 120
     
     Invisible network protocol sniffer. Designed for security engineers
 
-    Author: Mahama Bazarov, <caster@exploit.org>
+    Author: Magama Bazarov, <caster@exploit.org>
     Alias: Caster
     Version: 2.8
     Codename: Rubens Barrichello
@@ -352,7 +352,7 @@ As of version 2.8 Above is now able to identify the vendor by MAC address, speci
 
 # Copyright
 
-Copyright (c) 2025 Mahama Bazarov. This project is licensed under the Apache 2.0 License
+Copyright (c) 2025 Magama Bazarov. This project is licensed under the Apache 2.0 License
 
 # Outro
 

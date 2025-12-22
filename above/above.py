@@ -49,7 +49,7 @@ indent = "    "
 # right indented banner output
 print(indent + banner.replace("\n", "\n" + indent))
 print(indent + Fore.YELLOW + "Invisible network protocol sniffer. Designed for security engineers\n")
-print(indent + Fore.YELLOW + "Author: " + Style.RESET_ALL + "Mahama Bazarov, <mahamabazarov@mailbox.org>")
+print(indent + Fore.YELLOW + "Author: " + Style.RESET_ALL + "Magama Bazarov, <magamabazarov@mailbox.org>")
 print(indent + Fore.YELLOW + "Alias: " + Style.RESET_ALL + "Caster")
 print(indent + Fore.YELLOW + "Version: " + Style.RESET_ALL + "2.8")
 print(indent + Fore.YELLOW + "Codename: " + Style.RESET_ALL + "Rubens Barrichello\n")
