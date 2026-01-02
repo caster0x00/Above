@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name="above",
-    version="2.8",
+    version="2.8.1",
     url="https://github.com/caster0x00/above",
     author="Mahama Bazarov",
     author_email="mahamabazarov@mailbox.org",
-    description="Invisible Network Protocol Sniffer",
+    description="Network Security Sniffer",
     long_description=open('README.md', encoding="utf8").read(),
     long_description_content_type='text/markdown',
     license="Apache-2.0",
@@ -23,3 +23,4 @@ setup(
     python_requires='>=3.11',
     include_package_data=True,
 )
+
