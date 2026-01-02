@@ -29,7 +29,7 @@ Network security sniffer for finding vulnerabilities in the network. Designed fo
 
 # Mechanics
 
-Above is a invisible network sniffer for finding vulnerabilities in network equipment. It is based entirely on network traffic analysis, so it does not make any noise on the air. He's invisible. Completely based on the Scapy library.
+Above is a network security sniffer for finding vulnerabilities in network equipment. It is based entirely on network traffic analysis, so it does not make any noise on the air. He's invisible. Completely based on the Scapy library.
 
 > Above allows pentesters to automate the process of finding vulnerabilities in network hardware. Discovery protocols, dynamic routing, 802.1Q, Resolution protocols, ICS, FHRP, STP, LLMNR/NBT-NS, etc.
 
@@ -347,6 +347,7 @@ Copyright (c) 2025 Mahama Bazarov. This project is licensed under the Apache 2.0
 # Outro
 
 If you have any suggestions or find any bugs, feel free to create issues in the repository or contact me: [mahamabazarov@mailbox.org](mailto:mahamabazarov@mailbox.org)
+
 
 
 
