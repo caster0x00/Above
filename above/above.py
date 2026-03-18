@@ -1094,6 +1094,174 @@ def print_summary():
 
     print(Fore.WHITE + "=" * 60)
 
+_PROTOCOL_INFO = {
+    "MACSec":      {"impact": "802.1X-2010 infrastructure detected",                    "tools": "Wireshark",                                        "mitigation": "N/A"},
+    "OSPF":        {"impact": "Subnets Discovery, Route Injection, Routing Table Overflow", "tools": "Loki, Scapy, FRRouting",                      "mitigation": "Passive interfaces, Authentication, Extended ACL"},
+    "BGP":         {"impact": "Route Hijacking",                                        "tools": "Scapy, FRRouting",                                 "mitigation": "Use authentication, filter routes"},
+    "HSRP":        {"impact": "MITM",                                                   "tools": "Loki, Scapy, Yersinia",                            "mitigation": "Priority 255, Authentication, Extended ACL"},
+    "HSRPv2":      {"impact": "MITM",                                                   "tools": "Loki, Scapy",                                     "mitigation": "Priority 255, Authentication, Extended ACL"},
+    "VRRPv2":      {"impact": "MITM",                                                   "tools": "Scapy, Loki",                                     "mitigation": "Authentication, Filter VRRP traffic using ACL"},
+    "VRRPv3":      {"impact": "MITM",                                                   "tools": "Scapy, Loki",                                     "mitigation": "Filter VRRP traffic using ACL"},
+    "GLBP":        {"impact": "MITM",                                                   "tools": "Loki",                                            "mitigation": "Priority 255, Authentication"},
+    "DTP":         {"impact": "VLAN Segmentation Bypass",                               "tools": "Yersinia, Scapy",                                  "mitigation": "Disable DTP"},
+    "STP":         {"impact": "Partial MITM",                                           "tools": "Yersinia, Scapy",                                  "mitigation": "Enable BPDU Guard or Portfast"},
+    "CDP":         {"impact": "Information Gathering, CDP Flood/Spoofing",              "tools": "Wireshark, Yersinia",                              "mitigation": "Disable CDP if not required"},
+    "EIGRP":       {"impact": "Subnets Discovery, Route Injection, Routing Table Overflow", "tools": "Loki, Scapy, FRRouting",                      "mitigation": "Enable passive interfaces, use authentication"},
+    "LLMNR":       {"impact": "LLMNR Spoofing, Credentials Interception",               "tools": "Responder",                                       "mitigation": "Disable LLMNR"},
+    "NBT-NS":      {"impact": "NBT-NS Spoofing, Credentials Interception",             "tools": "Responder",                                       "mitigation": "Disable NBT-NS"},
+    "mDNS":        {"impact": "mDNS Spoofing, Credentials Interception",               "tools": "Responder",                                       "mitigation": "Monitor mDNS traffic with IDS"},
+    "EAPOL":       {"impact": "802.1X authentication detected",                         "tools": "N/A",                                             "mitigation": "N/A"},
+    "DHCP":        {"impact": "Unauthorized network configuration",                     "tools": "N/A",                                             "mitigation": "Use DHCP Snooping"},
+    "IGMP":        {"impact": "IGMP Sniffing, IGMP Flood",                              "tools": "Scapy, Wireshark",                                 "mitigation": "Use IGMP Snooping"},
+    "ICMPv6 RS":   {"impact": "DoS, Network Reconnaissance",                           "tools": "Scapy",                                           "mitigation": "N/A"},
+    "LLDP":        {"impact": "Information Gathering",                                  "tools": "Wireshark",                                        "mitigation": "Disable LLDP if not required"},
+    "MNDP":        {"impact": "Information Gathering (MikroTik)",                       "tools": "Wireshark",                                        "mitigation": "Disable MNDP if not required"},
+    "DHCPv6":      {"impact": "DHCPv6 Spoofing, DNS Spoofing",                         "tools": "mitm6",                                           "mitigation": "Enable DHCPv6 Snooping, Monitor with IDS"},
+    "SSDP":        {"impact": "UPnP Device Exploitation, MITM",                        "tools": "evil-ssdp",                                       "mitigation": "Disable UPnP unless necessary"},
+    "Modbus Req":  {"impact": "SCADA device detected",                                 "tools": "N/A",                                             "mitigation": "Network segmentation, monitor OT traffic"},
+    "Modbus Resp": {"impact": "SCADA device detected",                                 "tools": "N/A",                                             "mitigation": "Network segmentation, monitor OT traffic"},
+    "OMRON":       {"impact": "SCADA device detected",                                 "tools": "N/A",                                             "mitigation": "Network segmentation, monitor OT traffic"},
+    "S7COMM":      {"impact": "SCADA device detected",                                 "tools": "N/A",                                             "mitigation": "Network segmentation, monitor OT traffic"},
+    "TACACS+":     {"impact": "Credentials at risk",                                    "tools": "Loki",                                            "mitigation": "Use strong passwords, monitor unusual activities"},
+    "SNMP":        {"impact": "Information Gathering",                                  "tools": "onesixtyone, snmpwalk, snmp_enum",                 "mitigation": "Restrict SNMP access, use strong community strings"},
+}
+
+_FINDING_KEY_LABELS = {
+    "MACSec": ["System ID"], "OSPF": ["Router IP", "Area"], "BGP": ["Peer IP", "AS Number"],
+    "HSRP": ["Group", "Virtual IP", "Priority"], "HSRPv2": ["Source IP", "MAC"],
+    "VRRPv2": ["VRID", "Source IP", "Priority"], "VRRPv3": ["VRID", "Source IP", "Priority"],
+    "GLBP": ["Source IP", "MAC"], "DTP": ["Neighbor MAC"], "STP": ["Root MAC", "Root ID"],
+    "CDP": ["Hostname", "Port ID"], "EIGRP": ["ASN", "Neighbor IP"],
+    "LLMNR": ["Query Name", "Sender IP"], "NBT-NS": ["Question Name", "Sender IP"],
+    "mDNS": ["Sender IP", "Sender MAC"], "EAPOL": ["Version"], "DHCP": ["Sender MAC"],
+    "IGMP": ["Sender IP", "Type", "Dst IP"], "ICMPv6 RS": ["Source IPv6"],
+    "LLDP": ["Hostname", "Port ID"], "MNDP": ["Sender IP", "Sender MAC"],
+    "DHCPv6": ["Sender MAC", "Sender IP"], "SSDP": ["Source IP", "Source MAC"],
+    "Modbus Req": ["Src IP", "Dst IP", "Port"], "Modbus Resp": ["Src IP", "Dst IP", "Port"],
+    "OMRON": ["Src IP", "Dst IP"], "S7COMM": ["Src IP", "Dst IP"],
+    "TACACS+": ["Session ID", "Type"], "SNMP": ["Source IP", "Community"],
+}
+
+def export_excel(filepath):
+    """Export findings to an Excel workbook."""
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        print(Fore.RED + "[!] openpyxl required for Excel export: pip install openpyxl")
+        return
+
+    wb = Workbook()
+    hdr_font = Font(bold=True, color="FFFFFF", size=11)
+    hdr_fill = PatternFill(start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")
+    hdr_align = Alignment(horizontal="center")
+
+    def _write_headers(ws, headers):
+        for col, h in enumerate(headers, 1):
+            c = ws.cell(row=1, column=col, value=h)
+            c.font = hdr_font
+            c.fill = hdr_fill
+            c.alignment = hdr_align
+        ws.freeze_panes = "A2"
+
+    def _auto_width(ws):
+        for col_cells in ws.columns:
+            max_len = max((len(str(c.value or "")) for c in col_cells), default=8)
+            ws.column_dimensions[col_cells[0].column_letter].width = min(max_len + 3, 60)
+
+    def _ip_sort_key(ip):
+        try:
+            addr = ipaddress.ip_address(ip)
+            return (addr.version, int(addr))
+        except ValueError:
+            return (99, 0)
+
+    # --- Sheet 1: Findings ---
+    ws = wb.active
+    ws.title = "Findings"
+    _write_headers(ws, ["Protocol", "Details", "Attack Impact", "Tools", "Mitigation"])
+    row = 2
+    for protocol, key in sorted(seen_findings):
+        labels = _FINDING_KEY_LABELS.get(protocol, [])
+        parts = [f"{labels[i] if i < len(labels) else 'Field'}: {v}" for i, v in enumerate(key)]
+        info = _PROTOCOL_INFO.get(protocol, {})
+        ws.cell(row=row, column=1, value=protocol)
+        ws.cell(row=row, column=2, value=", ".join(parts))
+        ws.cell(row=row, column=3, value=info.get("impact", ""))
+        ws.cell(row=row, column=4, value=info.get("tools", ""))
+        ws.cell(row=row, column=5, value=info.get("mitigation", ""))
+        row += 1
+    _auto_width(ws)
+
+    # --- Sheet 2: Hosts ---
+    ws2 = wb.create_sheet("Hosts")
+    _write_headers(ws2, ["IP Address", "MAC Address", "Vendor", "Protocols"])
+    row = 2
+    for ip in sorted(discovered_hosts.keys(), key=_ip_sort_key):
+        info = discovered_hosts[ip]
+        ws2.cell(row=row, column=1, value=ip)
+        ws2.cell(row=row, column=2, value=', '.join(sorted(info['macs'])) if info['macs'] else 'N/A')
+        ws2.cell(row=row, column=3, value=info['vendor'])
+        ws2.cell(row=row, column=4, value=', '.join(sorted(info['protocols'])))
+        row += 1
+    _auto_width(ws2)
+
+    # --- Sheet 3: Protocol Stats ---
+    ws3 = wb.create_sheet("Protocol Stats")
+    _write_headers(ws3, ["Protocol", "Unique Findings", "Total Packets"])
+    row = 2
+    for protocol, total in sorted(finding_counts.items(), key=lambda x: -x[1]):
+        unique = sum(1 for k in seen_findings if k[0] == protocol)
+        ws3.cell(row=row, column=1, value=protocol)
+        ws3.cell(row=row, column=2, value=unique)
+        ws3.cell(row=row, column=3, value=total)
+        row += 1
+    _auto_width(ws3)
+
+    # --- Sheet 4: VLANs ---
+    if discovered_vlans:
+        ws4 = wb.create_sheet("VLANs")
+        _write_headers(ws4, ["VLAN ID", "Frame Count"])
+        row = 2
+        for vlan_id, count in sorted(discovered_vlans.items()):
+            ws4.cell(row=row, column=1, value=vlan_id)
+            ws4.cell(row=row, column=2, value=count)
+            row += 1
+        _auto_width(ws4)
+
+    # --- Sheet 5: Hostnames ---
+    if discovered_hostnames:
+        ws5 = wb.create_sheet("Hostnames")
+        _write_headers(ws5, ["Hostname", "Queried By"])
+        row = 2
+        for hostname, ips in sorted(discovered_hostnames.items()):
+            ws5.cell(row=row, column=1, value=hostname)
+            ws5.cell(row=row, column=2, value=', '.join(sorted(ips)))
+            row += 1
+        _auto_width(ws5)
+
+    # --- Sheet 6: Subnets ---
+    subnets = defaultdict(int)
+    for ip in discovered_hosts:
+        try:
+            addr = ipaddress.ip_address(ip)
+            if isinstance(addr, ipaddress.IPv4Address):
+                subnets[str(ipaddress.ip_network(f"{ip}/24", strict=False))] += 1
+        except ValueError:
+            pass
+    if subnets:
+        ws6 = wb.create_sheet("Subnets")
+        _write_headers(ws6, ["Subnet", "Host Count"])
+        row = 2
+        for subnet, count in sorted(subnets.items()):
+            ws6.cell(row=row, column=1, value=subnet)
+            ws6.cell(row=row, column=2, value=count)
+            row += 1
+        _auto_width(ws6)
+
+    wb.save(filepath)
+    print(Fore.YELLOW + f"[*] Excel report saved to {filepath}")
+
 def _matches_filter(packet):
     """Check if packet matches any protocol filter (mirrors top of packet_detection)."""
     return (packet.haslayer(OSPF_Hdr) or packet.haslayer(CDPv2_HDR) or packet.haslayer(MACsec) or packet.haslayer(EAPOL)
@@ -1299,6 +1467,7 @@ def main():
     parser.add_argument('--timer', type=int, help='Time in seconds to capture packets, default: not set')
     parser.add_argument('--output', type=str, help='File name where the traffic will be recorded, default: not set')
     parser.add_argument('--input', type=str, help='File name of the traffic dump')
+    parser.add_argument('--excel', type=str, help='Export findings to an Excel file (.xlsx)')
     parser.add_argument('--passive-arp', action='store_true', help='Passive ARP (Host Discovery)')
     parser.add_argument('--search-vlan', action='store_true', help='VLAN Search')
     args = parser.parse_args()
@@ -1306,6 +1475,8 @@ def main():
     def signal_handler(sig, frame):
         print("\n[!] CTRL+C pressed. Exiting...")
         print_summary()
+        if args.excel:
+            export_excel(args.excel)
         if args.output and packets:
             try:
                 wrpcap(args.output, packets)
@@ -1337,6 +1508,8 @@ def main():
                     print(Fore.YELLOW + f"\n[*] Saved {len(packets)} packets to {args.output}")
                 except Exception as e:
                     print(Fore.RED + f"Error saving packets to {args.output}: {e}")
+            if args.excel:
+                export_excel(args.excel)
         return
     if os.getuid() != 0:
         print(indent + "[!] Sniffing traffic requires root privileges. Please run as root.")
@@ -1353,6 +1526,8 @@ def main():
         print("[*] Start Sniffing")
         sniff(iface=args.interface, timeout=args.timer if args.timer is not None else None, prn=packet_detection, store=0)
         print_summary()
+        if args.excel:
+            export_excel(args.excel)
 
     if packets and args.output:
             try:
