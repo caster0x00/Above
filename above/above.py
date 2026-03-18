@@ -70,7 +70,7 @@ def get_mac_from_packet(packet, protocol=None):
 
     if packet.haslayer(Ether):
         return packet[Ether].src
-    elif packet.haslayer(CookedLinux):
+    if packet.haslayer(CookedLinux):
         return 'Unknown (Cooked Capture)'
 
     return 'Unknown'
@@ -548,7 +548,7 @@ def packet_detection(packet):
         elif packet.haslayer(IPv6):
             ip_src = packet[IPv6].src
         else:
-            return
+            return None
 
         mac_src = get_mac_from_packet(packet)
         vendor = get_mac_vendor(mac_src) if mac_src != 'Unknown' else 'N/A'
@@ -1345,7 +1345,7 @@ def _process_chunk(range_tuple):
         'hosts': {ip: {'macs': info['macs'], 'protocols': info['protocols'], 'vendor': info['vendor']}
                   for ip, info in discovered_hosts.items()},
         'vlans': dict(discovered_vlans),
-        'hostnames': {k: v for k, v in discovered_hostnames.items()},
+        'hostnames': dict(discovered_hostnames),
     }
 
 def _merge_worker_results(results):

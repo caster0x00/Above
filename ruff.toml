@@ -12,6 +12,8 @@ select = [
     "B",      # bugbear — common bugs and design problems
     "SIM",    # simplify — unnecessary complexity
     "RET504", # unnecessary assignment before return
+    "C416",   # unnecessary dict comprehension (already fixed)
+    "RET505", # unnecessary elif after return (already fixed)
 ]
 ignore = [
     "E401",   # multiple imports on one line (scapy imports are long)
