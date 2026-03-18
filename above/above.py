@@ -3,7 +3,7 @@
 import logging
 logging.getLogger("scapy").setLevel(logging.CRITICAL)
 
-from scapy.all import sniff, rdpcap, wrpcap, PcapReader, Ether, Dot1Q, IP, VRRP, VRRPv3, STP, IPv6, AH, Dot3, ARP, TCP, UDP, CookedLinux
+from scapy.all import sniff, rdpcap, wrpcap, Ether, Dot1Q, IP, VRRP, VRRPv3, STP, IPv6, AH, Dot3, ARP, TCP, UDP, CookedLinux
 from scapy.contrib.macsec import MACsec, MACsecSCI
 from scapy.contrib.eigrp import EIGRP, EIGRPAuthData
 from scapy.contrib.ospf import OSPF_Hdr
@@ -29,13 +29,14 @@ import ipaddress
 import multiprocessing
 import socket
 import signal
+import threading
 import time
 import sys
 import os
 import argparse
 
-# For colors (colorama)
-init(autoreset=True)
+# For colors (colorama) — strip ANSI when stdout is redirected to a file
+init(autoreset=True, strip=not sys.stdout.isatty())
 
 # banner
 banner = r"""                                         
@@ -79,30 +80,41 @@ def analyze_pcap(pcap_path):
     global _shared_packets, _progress_counter, packets
 
     t0 = time.time()
-    file_size = os.path.getsize(pcap_path)
-    _shared_packets = []
-    with PcapReader(pcap_path) as reader:
-        count = 0
-        for pkt in reader:
-            _shared_packets.append(pkt)
-            count += 1
-            if count % 2000 == 0:
-                try:
-                    pos = reader.f.tell()
-                except Exception:
-                    pos = 0
-                _print_loading_bar(pos, file_size, time.time() - t0, count)
-    t_load = time.time() - t0
+    file_size_mb = os.path.getsize(pcap_path) / (1024 * 1024)
+    is_tty = sys.stdout.isatty()
+
+    # Load in background thread — rdpcap uses C-optimized parsing
+    load_result = [None]
+    def _load():
+        load_result[0] = rdpcap(pcap_path)
+    loader = threading.Thread(target=_load)
+    loader.start()
+
+    spinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    while loader.is_alive():
+        if is_tty:
+            elapsed = time.time() - t0
+            ch = spinner[int(elapsed * 8) % len(spinner)]
+            sys.stdout.write(f'\x1b[2K\r  {ch} Loading {file_size_mb:.0f}MB pcap... {elapsed:.1f}s')
+            sys.stdout.flush()
+        loader.join(timeout=0.15)
+
+    _shared_packets = load_result[0]
     total = len(_shared_packets)
-    _print_loading_bar(file_size, file_size, t_load, total)
-    print()
+    t_load = time.time() - t0
+    if is_tty:
+        sys.stdout.write(f'\x1b[2K\r  ✓ Loaded {file_size_mb:.0f}MB — {total:,} packets in {t_load:.1f}s\n')
+        sys.stdout.flush()
+    else:
+        print(f"  Loaded {total:,} packets in {t_load:.1f}s")
 
     if total == 0:
         print(indent + "[*] No packets found.")
         return
 
     num_workers = min(3, total)
-    print(indent + f"[*] Analyzing with {num_workers} workers...\n")
+    if is_tty:
+        print(indent + f"[*] Analyzing with {num_workers} workers...\n")
 
     chunk_size = total // num_workers
     chunks = []
@@ -120,11 +132,12 @@ def analyze_pcap(pcap_path):
 
             while not async_result.ready():
                 time.sleep(0.15)
-                elapsed = time.time() - t_analysis
-                _print_progress_bar(_progress_counter.value, total, elapsed)
+                if is_tty:
+                    _print_progress_bar(_progress_counter.value, total, time.time() - t_analysis)
 
-            _print_progress_bar(total, total, time.time() - t_analysis)
-            print()
+            if is_tty:
+                _print_progress_bar(total, total, time.time() - t_analysis)
+                print()
 
             results = async_result.get()
     except Exception:
@@ -132,10 +145,11 @@ def analyze_pcap(pcap_path):
         _progress_counter = None
         for i, pkt in enumerate(_shared_packets):
             packet_detection(pkt)
-            if (i + 1) % 2000 == 0:
+            if is_tty and (i + 1) % 2000 == 0:
                 _print_progress_bar(i + 1, total, time.time() - t_analysis)
-        _print_progress_bar(total, total, time.time() - t_analysis)
-        print()
+        if is_tty:
+            _print_progress_bar(total, total, time.time() - t_analysis)
+            print()
         results = None
 
     if results is not None:
