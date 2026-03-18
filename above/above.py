@@ -1165,6 +1165,9 @@ def export_excel(filepath):
         print(Fore.RED + "[!] openpyxl required for Excel export: pip install openpyxl")
         return
 
+    if not filepath.endswith('.xlsx'):
+        filepath += '.xlsx'
+
     wb = Workbook()
     hdr_font = Font(bold=True, color="FFFFFF", size=11)
     hdr_fill = PatternFill(start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")
