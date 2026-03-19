@@ -1,0 +1,36 @@
+target-version = "py311"
+line-length = 150
+
+[lint]
+select = [
+    "F",      # pyflakes — unused imports, undefined names, etc.
+    "E4",     # import errors
+    "E7",     # statement errors (syntax-adjacent)
+    "E9",     # runtime errors (syntax, IO)
+    "W6",     # deprecated features
+    "UP",     # pyupgrade — old syntax patterns
+    "B",      # bugbear — common bugs and design problems
+    "SIM",    # simplify — unnecessary complexity
+    "RET504", # unnecessary assignment before return
+    "C416",   # unnecessary dict comprehension (already fixed)
+    "RET505", # unnecessary elif after return (already fixed)
+]
+ignore = [
+    "E401",   # multiple imports on one line (scapy imports are long)
+    "E402",   # module-level import not at top (logging before scapy is intentional)
+    "F403",   # star import (scapy igmpv3 needs it)
+    "F405",   # may be undefined from star import
+    "E722",   # bare except (upstream pattern — scapy packet parsing)
+    "B002",   # unintentional bare except (upstream code pattern)
+    "UP031",  # printf-style formatting (existing code uses both)
+    "SIM102", # nested if (upstream style for protocol checks with haslayer guard)
+    "SIM105", # use contextlib.suppress (bare except is fine here)
+    "RET504", # unnecessary assign before return (readability in small helpers)
+    "SIM108", # ternary instead of if/else (readability)
+    "SIM110", # use any/all (readability for protocol checks)
+    "SIM114", # combine if branches (protocol blocks are intentionally separate)
+    "SIM401", # use dict.get (readability)
+]
+
+[lint.per-file-ignores]
+"above/above_oui_dict.py" = ["E501", "ALL"]  # auto-generated OUI lookup, don't lint
